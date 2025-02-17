@@ -1,0 +1,151 @@
+select * from city limit 10;
+select * from country limit 10;
+select * from countrylanguage limit 10;
+
+
+select * 
+from city 
+where name like 'B%'
+order by population desc
+limit 10;
+
+
+select count(distinct district)
+from city 
+where name like 'B%';
+
+select sum(population)
+from city 
+where name like 'B%';
+
+
+select countrycode, sum(population) as total_pop
+from city
+group by countrycode
+order by countrycode;
+
+select countrycode, avg(population) as avg_pop
+from city 
+group by countrycode
+order by avg_pop desc;
+
+
+
+select country.name, avg(city.population) as avg_pop
+from city INNER JOIN country ON city.countrycode = country.code
+group by country.name
+order by avg_pop desc;
+
+
+select *
+from city INNER JOIN country ON city.countrycode = country.code
+where continent = 'Europe' and city.population > 3000000;
+
+-- select pop_a.sum, pop_an.sum, cast(pop_a.sum as float)/pop_an.sum as res
+select *
+from (select sum(population) as sum_a
+from country 
+where name like 'A%') as pop_a, (select sum(population) as sum_an
+from country 
+where name like 'An%') as pop_an
+
+
+
+
+-- Hands-on (Examples)
+-- 1. Sum countries’ population, where the first letter is ‘A’
+select sum(population) 
+from city 
+where name like 'A%';
+
+
+-- 2. Sum countries’ population and percentage (An/A), where the first letter is ‘A’ or ‘An’ 
+select A.pop_a, B.pop_an, cast(B.pop_an as float)/cast(A.pop_a as float)
+from (
+	select sum(population) as pop_a
+	from country
+	where name like 'A%'
+) as A, (
+	select sum(population) as pop_an
+	from country
+	where name like 'An%'
+) as B;
+
+
+-- 3. Cities & countries (name), belonging to ‘Asia’ & city’s population is higher that 4000000 people 
+select *
+from city inner join country on city.countrycode = country.code
+where country.continent = 'Asia' and city.population > 4000000;
+
+-- Alternative solution...
+select *
+from city INNER JOIN country ON city.countrycode = country.code
+where continent = 'Asia' and city.population > 4000000
+order by city.population desc;
+
+
+-- 4. Cities & countries (name), belonging to ‘Asia’ & (optionally) city’s population is higher that 4000000 people
+select *
+from city INNER JOIN country ON city.countrycode = country.code
+where continent = 'Asia' or city.population > 4000000
+order by city.population desc;
+-- Is it right though?
+
+select *
+from (
+	select * 
+	from country
+	where continent = 'Asia' 
+) as country_asia LEFT OUTER JOIN (
+	select * 
+	from city
+	where population > 4000000
+) as city_4m 
+on country_asia.code = city_4m.countrycode;
+ 
+
+-- 5. Country (code), city (name) & language, having percentage greater than 50% & population is higher than  4000000 people
+select cl_50pct.language, country.code, city.name
+from city inner join (
+	select countrycode, language
+	from countrylanguage
+	where percentage > 50
+) as cl_50pct on city.countrycode = cl_50pct.countrycode 
+inner join country on cl_50pct.countrycode = country.code
+where city.population > 4000000;
+
+-- Alternative (better) solution
+select cl_50pct.countrycode, city.name, cl_50pct.language
+from (
+	select * 
+	from countrylanguage 
+	where percentage > 50
+) as cl_50pct NATURAL JOIN city
+where city.population > 4000000;
+
+
+-- 6. Country (name) and language (percentage, official) having the maximum percentage and the language is official
+select * 
+from (select countrycode, max(percentage)
+	  from countrylanguage 
+	  where isofficial=true
+	  group by countrycode) as lang_maxpct
+inner join country on lang_maxpct.countrycode = country.code;
+
+
+select *
+from (
+	select countrycode, max(percentage) as max_pct
+	from countrylanguage
+	where isofficial=true
+	group by countrycode
+) as cl_pct_max 
+inner join countrylanguage on cl_pct_max.countrycode = countrylanguage.countrycode
+where countrylanguage.percentage = cl_pct_max.max_pct
+
+
+-- 7. Country & city (names) as well as language, sorted by country’s code
+select country.name, city.name, countrylanguage.language
+from country INNER JOIN city ON country.code = city.countrycode
+	 		 INNER JOIN countrylanguage ON country.code = countrylanguage.countrycode
+order by country.code asc;
