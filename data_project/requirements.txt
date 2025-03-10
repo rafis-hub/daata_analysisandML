@@ -1,0 +1,6 @@
+#DEPENDENCIES for the virtual environment
+
+#python -m vemv myvenv
+#.\myvenv\Scripts\activate     
+
+#pip install pandas numpy seaborn matplotlib scikit-learn ipykernel 
